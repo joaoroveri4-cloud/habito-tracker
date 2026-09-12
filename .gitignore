@@ -1,0 +1,21 @@
+# Arquivo de configuração de credenciais sensíveis (opcional)
+# Descomente a linha abaixo se preferir não versionar suas credenciais reais
+# firebase-config.js
+
+# Dependências
+node_modules/
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Logs e arquivos de sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Diretório de build/cache
+.cache/
+dist/
