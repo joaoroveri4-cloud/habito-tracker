@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌱 Hábito Tracker - Cultive seus hábitos, colha resultados</title>
+  
+  <!-- SEO & Meta tags -->
+  <meta name="description" content="Hábito Tracker: aplicação de jardinagem virtual com desafios entre amigos, ranking em tempo real e streaks de consistência integrados ao Firebase.">
+  <meta name="theme-color" content="#2d6a4f">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%200%22%20100%22%20100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Folha de Estilos Principal -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Alerta de Conexão com Firebase / Modo Demonstração -->
+  <div id="firebase-status-banner" class="status-banner hidden">
+    <div class="banner-content">
+      <span class="banner-icon">ℹ️</span>
+      <span id="banner-text">Conectando ao Firebase Firestore...</span>
+      <button id="btn-close-banner" class="banner-close" title="Fechar aviso">&times;</button>
+    </div>
+  </div>
+
+  <!-- Container Principal -->
+  <div class="app-container">
+    
+    <!-- Cabeçalho -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-brand">
+          <div class="logo-icon-wrap">
+            <span class="logo-icon">🌱</span>
+          </div>
+          <div>
+            <h1 class="header-title">Hábito Tracker</h1>
+            <p class="header-subtitle">Cultive seus hábitos, colha resultados</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Botão Modo Escuro -->
+          <button id="btn-toggle-theme" class="btn-icon" title="Alternar tema claro/escuro" aria-label="Alternar tema">
+            <span class="theme-icon">🌙</span>
+          </button>
+          
+          <!-- Botão Novo Desafio -->
+          <button id="btn-open-modal-challenge" class="btn btn-challenge">
+            <span class="btn-icon-inner">⚔️</span> Criar Desafio
+            <span id="challenges-badge-count" class="badge-notification hidden">0</span>
+          </button>
+
+          <!-- Botão Novo Hábito -->
+          <button id="btn-open-modal-add" class="btn btn-primary btn-sparkle">
+            <span class="btn-icon-inner">➕</span> Novo Hábito
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Medidor de Nível Global do Usuário (No topo da página) -->
+    <section class="global-level-section" aria-label="Nível Global do Jardineiro">
+      <div class="global-level-card">
+        <div class="global-level-header">
+          <div class="global-level-avatar" id="global-level-icon">🌱</div>
+          <div class="global-level-meta">
+            <div class="global-level-title-row">
+              <span class="global-level-tag" id="global-level-tag">Nível 1</span>
+              <h2 class="global-level-name" id="global-level-name">Jardineiro Broto</h2>
+            </div>
+            <p class="global-level-desc" id="global-level-desc">Você está iniciando sua jornada de cultivo diário.</p>
+          </div>
+          <div class="global-days-counter">
+            <span class="days-label">Total em Streaks</span>
+            <strong class="days-val" id="global-total-days">0 <small>dias</small></strong>
+          </div>
+        </div>
+
+        <div class="global-progress-track-wrapper">
+          <div class="global-progress-labels">
+            <span id="global-progress-status">0 / 10 dias para Nível 2 🌿</span>
+            <span id="global-progress-pct">0%</span>
+          </div>
+          <div class="global-progress-track">
+            <div class="global-progress-bar" id="global-progress-bar" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção de Estatísticas Gerais (3 Cards Pequenos com Ícones) -->
+    <section class="stats-section" aria-label="Estatísticas Gerais de Hábitos">
+      <div class="stats-grid">
+        
+        <!-- Card 1: Total de Hábitos Cadastrados -->
+        <div class="stat-card" id="card-stat-total">
+          <div class="stat-icon-wrapper stat-icon-green">
+            <span>🪴</span>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Total de Hábitos</span>
+            <strong class="stat-value" id="stat-total-habits">0</strong>
+          </div>
+        </div>
+
+        <!-- Card 2: Maior Streak Atual -->
+        <div class="stat-card" id="card-stat-streak">
+          <div class="stat-icon-wrapper stat-icon-orange">
+            <span>🔥</span>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Maior Sequência (Streak)</span>
+            <strong class="stat-value" id="stat-max-streak">0 <small>dias</small></strong>
+          </div>
+        </div>
+
+        <!-- Card 3: Hábitos Marcados Hoje -->
+        <div class="stat-card" id="card-stat-today">
+          <div class="stat-icon-wrapper stat-icon-blue">
+            <span>💧</span>
+          </div>
+          <div class="stat-info">
+            <span class="stat-label">Regados Hoje</span>
+            <strong class="stat-value" id="stat-completed-today">0 / 0</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Barra de Progresso Diário -->
+      <div class="daily-progress-container">
+        <div class="progress-labels">
+          <span>Progresso do Jardim Hoje</span>
+          <span id="progress-percentage">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="daily-progress-bar" style="width: 0%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOVO: Seção Meu Ranking & Competição Entre Amigos -->
+    <section class="social-section" aria-label="Ranking e Desafios Entre Amigos">
+      <div class="social-grid">
+        
+        <!-- Bloco 1: Meu Ranking (Pódio dos Amigos) -->
+        <div class="ranking-panel">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-icon">🏆</span>
+              <div>
+                <h3>Meu Ranking</h3>
+                <span class="panel-subtitle" id="user-ranking-position">Calculando sua posição...</span>
+              </div>
+            </div>
+            <button id="btn-toggle-ranking-expand" class="btn-text-action">Expandir Ranking</button>
+          </div>
+
+          <div id="ranking-list-container" class="ranking-list">
+            <!-- Renderizado dinamicamente via challenges.js -->
+          </div>
+        </div>
+
+        <!-- Bloco 2: Painel de Desafios Ativos & Histórico -->
+        <div class="challenges-panel">
+          <div class="panel-header">
+            <div class="panel-title-wrap">
+              <span class="panel-icon">⚔️</span>
+              <div>
+                <h3>Desafios Entre Amigos</h3>
+                <span class="panel-subtitle">Competições em tempo real no Firestore</span>
+              </div>
+            </div>
+
+            <div class="challenge-filter-pills" id="challenge-filter-pills">
+              <button class="filter-pill active" data-chal-filter="todos">Todos</button>
+              <button class="filter-pill" data-chal-filter="ativos">Ativos</button>
+              <button class="filter-pill" data-chal-filter="pendentes">Pendentes</button>
+              <button class="filter-pill" data-chal-filter="concluidos">Histórico</button>
+            </div>
+          </div>
+
+          <!-- Estado Vazio de Desafios -->
+          <div id="challenges-empty-state" class="challenges-empty-state hidden">
+            <span class="empty-icon">🤝</span>
+            <p>Nenhum desafio encontrado nesta categoria.</p>
+            <button id="btn-empty-create-chal" class="btn btn-secondary btn-sm">Criar Primeiro Desafio</button>
+          </div>
+
+          <!-- Grid de Cards de Desafios (Layout VS) -->
+          <div id="challenges-grid" class="challenges-grid">
+            <!-- Renderizado dinamicamente via challenges.js -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Seção Principal do Jardim (Grid de Hábitos) -->
+    <main class="main-content">
+      <div class="section-heading">
+        <div class="heading-left">
+          <h2>Seu Jardim de Hábitos</h2>
+          <span class="badge-count" id="habits-count-badge">0 hábitos</span>
+        </div>
+
+        <!-- Filtros rápidos -->
+        <div class="filter-pills" id="filter-pills">
+          <button class="filter-pill active" data-filter="all">Todos</button>
+          <button class="filter-pill" data-filter="pending">Pendentes Hoje ⏳</button>
+          <button class="filter-pill" data-filter="completed">Regados Hoje ✨</button>
+        </div>
+      </div>
+
+      <!-- Estado de Carregamento -->
+      <div id="loading-state" class="loading-state">
+        <div class="spinner"></div>
+        <p>Cuidando das plantinhas no Firestore...</p>
+      </div>
+
+      <!-- Estado Vazio (Sem Hábitos) -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-illustration">🌱✨</div>
+        <h3>Seu jardim ainda está vazio</h3>
+        <p>Comece plantando seu primeiro hábito diário e veja sua plantinha florescer!</p>
+        <button id="btn-empty-add" class="btn btn-primary">
+          <span>➕</span> Criar Primeiro Hábito
+        </button>
+      </div>
+
+      <!-- Grid de Cards de Hábitos -->
+      <div id="habits-grid" class="habits-grid">
+        <!-- Renderizado dinamicamente via app.js -->
+      </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="app-footer">
+      <p>Hábito Tracker &bull; Feito com <span class="heart-pulse">💚</span> para cultivar sua melhor versão</p>
+      <p class="footer-subtext">Persistência em tempo real com Firebase Firestore</p>
+    </footer>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- NOVO MODAL: CRIAR DESAFIO ENTRE AMIGOS     -->
+  <!-- ========================================== -->
+  <div id="modal-create-challenge" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-chal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-title-icon">⚔️</span>
+          <h3 id="modal-chal-title">Criar Desafio com Amigo</h3>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-challenge" aria-label="Fechar modal">&times;</button>
+      </div>
+
+      <form id="form-create-challenge" class="modal-form" novalidate>
+        
+        <!-- Seleção do Amigo -->
+        <div class="form-group">
+          <label for="select-challenge-friend">Selecione o Amigo <span class="required">*</span></label>
+          <select id="select-challenge-friend" class="form-select" required>
+            <option value="">Escolha um amigo da sua rede...</option>
+            <!-- Preenchido dinamicamente -->
+          </select>
+          <span class="form-hint">Ou adicione um amigo informando o ID/email abaixo</span>
+          <input type="text" id="input-custom-friend-name" placeholder="Ou digite o nome/email de outro amigo..." class="form-input-subtle">
+        </div>
+
+        <!-- Seleção do Hábito -->
+        <div class="form-group">
+          <label for="select-challenge-habit">Hábito em Disputa <span class="required">*</span></label>
+          <select id="select-challenge-habit" class="form-select" required>
+            <option value="">Selecione um dos seus hábitos...</option>
+            <!-- Preenchido dinamicamente -->
+          </select>
+        </div>
+
+        <!-- Duração do Desafio -->
+        <div class="form-group">
+          <label>Duração do Desafio</label>
+          <div class="duration-selector">
+            <label class="duration-option">
+              <input type="radio" name="challengeDuration" value="7" checked>
+              <span class="duration-card">
+                <strong>7 Dias</strong>
+                <small>1 Semana</small>
+              </span>
+            </label>
+            <label class="duration-option">
+              <input type="radio" name="challengeDuration" value="14">
+              <span class="duration-card">
+                <strong>14 Dias</strong>
+                <small>2 Semanas</small>
+              </span>
+            </label>
+            <label class="duration-option">
+              <input type="radio" name="challengeDuration" value="30">
+              <span class="duration-card">
+                <strong>30 Dias</strong>
+                <small>1 Mês</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Definição de Objetivo -->
+        <div class="form-group">
+          <label>Objetivo da Competição</label>
+          <div class="objective-selector">
+            <label class="radio-label">
+              <input type="radio" name="challengeObjective" id="radio-obj-streak" value="streak" checked>
+              <span>🔥 <strong>Manter Streak</strong> (quem mantiver a maior sequência diária)</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="challengeObjective" id="radio-obj-marcacoes" value="marcacoes">
+              <span>💧 <strong>Atingir Meta de Regas</strong> (quantidade total de vezes marcado)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="group-target-marks">
+          <label for="input-target-marks">Meta de Marcações no Período</label>
+          <input type="number" id="input-target-marks" min="1" max="100" value="7">
+        </div>
+
+        <span class="form-error" id="error-create-challenge"></span>
+
+        <!-- Ações do Modal -->
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-modal-challenge">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-challenge">
+            <span class="btn-text">Lançar Desafio ⚔️</span>
+            <div class="btn-spinner hidden"></div>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CADASTRAR NOVO HÁBITO               -->
+  <!-- ========================================== -->
+  <div id="modal-add-habit" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-add-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-title-icon">🌱</span>
+          <h3 id="modal-add-title">Plantar Novo Hábito</h3>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-add" aria-label="Fechar modal">&times;</button>
+      </div>
+
+      <form id="form-add-habit" class="modal-form" novalidate>
+        
+        <!-- Campo Nome do Hábito -->
+        <div class="form-group">
+          <label for="input-habit-name">Nome do Hábito <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="input-habit-name" 
+            name="habitName" 
+            placeholder="Ex: Ler 15 páginas, Beber 2L de água..." 
+            minlength="3" 
+            maxlength="50" 
+            required 
+            autocomplete="off"
+          >
+          <span class="form-hint">Mínimo de 3 e máximo de 50 caracteres</span>
+          <span class="form-error" id="error-habit-name"></span>
+        </div>
+
+        <!-- Seleção de Emojis / Ícones Predefinidos -->
+        <div class="form-group">
+          <label>Selecione um Ícone para o Hábito</label>
+          <div class="emoji-selector" id="emoji-options-add">
+            <button type="button" class="emoji-btn selected" data-emoji="📚" title="Leitura">
+              <span class="emoji-char">📚</span>
+              <span class="emoji-text">Leitura</span>
+            </button>
+            <button type="button" class="emoji-btn" data-emoji="💧" title="Beber água">
+              <span class="emoji-char">💧</span>
+              <span class="emoji-text">Beber água</span>
+            </button>
+            <button type="button" class="emoji-btn" data-emoji="🏃" title="Exercício">
+              <span class="emoji-char">🏃</span>
+              <span class="emoji-text">Exercício</span>
+            </button>
+            <button type="button" class="emoji-btn" data-emoji="🧘" title="Meditação">
+              <span class="emoji-char">🧘</span>
+              <span class="emoji-text">Meditação</span>
+            </button>
+            <button type="button" class="emoji-btn" data-emoji="💤" title="Dormir cedo">
+              <span class="emoji-char">💤</span>
+              <span class="emoji-text">Dormir cedo</span>
+            </button>
+            <button type="button" class="emoji-btn" data-emoji="✍️" title="Escrever">
+              <span class="emoji-char">✍️</span>
+              <span class="emoji-text">Escrever</span>
+            </button>
+            <button type="button" class="emoji-btn" data-emoji="🎯" title="Outro">
+              <span class="emoji-char">🎯</span>
+              <span class="emoji-text">Outro</span>
+            </button>
+          </div>
+          <input type="hidden" id="selected-emoji-add" value="📚">
+        </div>
+
+        <!-- Visualização inicial do broto -->
+        <div class="preview-growth-box">
+          <div class="growth-plant-preview">🌱</div>
+          <div class="growth-text-preview">
+            <strong>Nível 1: Broto</strong>
+            <p>Seu hábito começará como uma sementinha recém-brotada!</p>
+          </div>
+        </div>
+
+        <!-- Ações do Modal -->
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-modal-add">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-add">
+            <span class="btn-text">Plantar Hábito 🌱</span>
+            <div class="btn-spinner hidden"></div>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EDITAR HÁBITO                       -->
+  <!-- ========================================== -->
+  <div id="modal-edit-habit" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-edit-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-title-icon">✏️</span>
+          <h3 id="modal-edit-title">Editar Hábito</h3>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-edit" aria-label="Fechar modal">&times;</button>
+      </div>
+
+      <form id="form-edit-habit" class="modal-form" novalidate>
+        <input type="hidden" id="input-edit-id">
+
+        <!-- Nome do Hábito -->
+        <div class="form-group">
+          <label for="input-edit-name">Nome do Hábito <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="input-edit-name" 
+            name="editName" 
+            placeholder="Nome do hábito..." 
+            minlength="3" 
+            maxlength="50" 
+            required 
+            autocomplete="off"
+          >
+          <span class="form-error" id="error-edit-name"></span>
+        </div>
+
+        <!-- Seleção de Emojis -->
+        <div class="form-group">
+          <label>Selecione um Ícone para o Hábito</label>
+          <div class="emoji-selector" id="emoji-options-edit">
+            <button type="button" class="emoji-btn" data-emoji="📚"><span class="emoji-char">📚</span><span class="emoji-text">Leitura</span></button>
+            <button type="button" class="emoji-btn" data-emoji="💧"><span class="emoji-char">💧</span><span class="emoji-text">Beber água</span></button>
+            <button type="button" class="emoji-btn" data-emoji="🏃"><span class="emoji-char">🏃</span><span class="emoji-text">Exercício</span></button>
+            <button type="button" class="emoji-btn" data-emoji="🧘"><span class="emoji-char">🧘</span><span class="emoji-text">Meditação</span></button>
+            <button type="button" class="emoji-btn" data-emoji="💤"><span class="emoji-char">💤</span><span class="emoji-text">Dormir cedo</span></button>
+            <button type="button" class="emoji-btn" data-emoji="✍️"><span class="emoji-char">✍️</span><span class="emoji-text">Escrever</span></button>
+            <button type="button" class="emoji-btn" data-emoji="🎯"><span class="emoji-char">🎯</span><span class="emoji-text">Outro</span></button>
+          </div>
+          <input type="hidden" id="selected-emoji-edit" value="📚">
+        </div>
+
+        <!-- Ações do Modal -->
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-modal-edit">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-edit">
+            <span class="btn-text">Salvar Alterações</span>
+            <div class="btn-spinner hidden"></div>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CONFIRMAÇÃO DE EXCLUSÃO             -->
+  <!-- ========================================== -->
+  <div id="modal-delete-habit" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-icon-alert">🗑️</div>
+      <h3>Remover Hábito?</h3>
+      <p id="modal-delete-text">Tem certeza de que deseja remover esta plantinha do seu jardim? O progresso e streaks serão excluídos permanentemente.</p>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-modal-delete">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">
+          <span class="btn-text">Sim, Excluir</span>
+          <div class="btn-spinner hidden"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CELEBRAÇÃO DE MILESTONE (CONQUISTA) -->
+  <!-- ========================================== -->
+  <div id="modal-milestone" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-card-celebration">
+      <div class="milestone-badge-icon" id="milestone-icon">🏆</div>
+      <h2 id="milestone-title">Parabéns!</h2>
+      <p class="milestone-message" id="milestone-message">Você atingiu uma nova conquista!</p>
+      <div class="milestone-habit-info" id="milestone-habit-info">
+        <span id="milestone-habit-emoji">🌱</span> <strong id="milestone-habit-name">Hábito</strong>
+      </div>
+      <button type="button" class="btn btn-primary btn-sparkle" id="btn-close-milestone">
+        Continuar Cultivando! ✨
+      </button>
+    </div>
+  </div>
+
+  <!-- Container de Mensagens Toast Flutuantes -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts: Firebase SDKs v10 via ESM + App Principal -->
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
