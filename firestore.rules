@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Coleção de hábitos — leitura e escrita públicas (modo teste)
+    match /habitos/{habitoId} {
+      allow read, write: if true;
+    }
+
+    // Coleção de desafios — leitura e escrita públicas (modo teste)
+    match /desafios/{desafioId} {
+      allow read, write: if true;
+    }
+
+    // Coleção de usuários — leitura e escrita públicas (modo teste)
+    match /usuarios/{usuarioId} {
+      allow read, write: if true;
+    }
+  }
+}
